@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图书管理系统</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <h1 class="logo">📚 图书管理系统</h1>
+      <nav class="nav">
+        <button class="nav-btn active" data-tab="list" onclick="switchTab('list')">📋 图书列表</button>
+        <button class="nav-btn" data-tab="add" onclick="switchTab('add')">➕ 录入图书</button>
+        <button class="nav-btn" data-tab="search" onclick="switchTab('search')">🔍 高级查询</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- ===== 图书列表 Tab ===== -->
+    <div id="tab-list" class="tab-content">
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="搜索书名或作者..." onkeydown="if(event.key==='Enter')handleSearch()" />
+        <button onclick="handleSearch()">🔍 搜索</button>
+      </div>
+
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>加载中...</p>
+      </div>
+
+      <div id="error" class="error hidden">
+        <p>❌ 加载失败，请稍后重试</p>
+        <button onclick="loadBooks()">重试</button>
+      </div>
+
+      <div id="empty" class="empty hidden">
+        <p>📭 暂无图书数据</p>
+      </div>
+
+      <div id="bookList" class="book-list hidden"></div>
+
+      <div id="pagination" class="pagination hidden">
+        <button id="prevBtn" onclick="goToPage('prev')">« 上一页</button>
+        <span id="pageInfo">第 1 页</span>
+        <button id="nextBtn" onclick="goToPage('next')">下一页 »</button>
+      </div>
+    </div>
+
+    <!-- ===== 录入图书 Tab ===== -->
+    <div id="tab-add" class="tab-content hidden">
+      <div class="form-container">
+        <h2>📖 录入新书</h2>
+        <form id="addBookForm" onsubmit="handleAddBook(event)">
+          <div class="form-group">
+            <label for="title">书名 *</label>
+            <input type="text" id="title" required placeholder="请输入书名">
+          </div>
+          <div class="form-group">
+            <label for="author">作者 *</label>
+            <input type="text" id="author" required placeholder="请输入作者">
+          </div>
+          <div class="form-group">
+            <label for="isbn">ISBN</label>
+            <input type="text" id="isbn" placeholder="请输入 ISBN 编号">
+          </div>
+          <div class="form-group">
+            <label for="publisher">出版社</label>
+            <input type="text" id="publisher" placeholder="请输入出版社">
+          </div>
+          <div class="form-group">
+            <label for="publish_date">出版日期</label>
+            <input type="date" id="publish_date">
+          </div>
+          <div class="form-group">
+            <label for="price">价格 (元)</label>
+            <input type="number" id="price" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label for="description">描述</label>
+            <textarea id="description" rows="4" placeholder="请输入图书描述"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">✅ 提交录入</button>
+            <button type="reset" class="btn-secondary">🔄 重置</button>
+          </div>
+        </form>
+        <div id="addResult" class="result hidden"></div>
+      </div>
+    </div>
+
+    <!-- ===== 高级查询 Tab ===== -->
+    <div id="tab-search" class="tab-content hidden">
+      <div class="form-container">
+        <h2>🔍 高级查询</h2>
+        <form id="searchForm" onsubmit="handleAdvancedSearch(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="searchTitle">书名</label>
+              <input type="text" id="searchTitle" placeholder="按书名搜索">
+            </div>
+            <div class="form-group">
+              <label for="searchAuthor">作者</label>
+              <input type="text" id="searchAuthor" placeholder="按作者搜索">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="searchISBN">ISBN</label>
+              <input type="text" id="searchISBN" placeholder="按 ISBN 搜索">
+            </div>
+            <div class="form-group">
+              <label for="searchPublisher">出版社</label>
+              <input type="text" id="searchPublisher" placeholder="按出版社搜索">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="priceMin">最低价格</label>
+              <input type="number" id="priceMin" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label for="priceMax">最高价格</label>
+              <input type="number" id="priceMax" step="0.01" min="0" placeholder="不限">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">🔍 查询</button>
+            <button type="reset" class="btn-secondary" onclick="resetSearch()">🔄 重置</button>
+          </div>
+        </form>
+        <div id="searchResults" class="search-results hidden">
+          <h3>查询结果</h3>
+          <div id="searchBookList" class="book-list"></div>
+          <div id="searchEmpty" class="empty hidden">
+            <p>📭 未找到匹配的图书</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>图书管理系统 © 2026</p>
+    </div>
+  </footer>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>⚠️ 确认删除</h3>
+      <p>确定要删除《<span id="deleteBookTitle"></span>》吗？</p>
+      <p class="warning">此操作不可恢复！</p>
+      <div class="modal-actions">
+        <button class="btn-danger" id="confirmDelete">确认删除</button>
+        <button class="btn-secondary" onclick="closeDeleteModal()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
